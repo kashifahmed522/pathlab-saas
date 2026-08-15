@@ -135,3 +135,24 @@ To onboard a new lab/franchise, they simply visit `/register` — no manual setu
 - Add rate-limiting on `/login` (e.g. `express-rate-limit`) to prevent brute-force attempts.
 - Review India's DPDP Act / HIPAA-equivalent requirements for storing patient health data before
   onboarding real patients — this starter is a functional base, not a compliance certification.
+
+## 8. Changelog
+
+**v1.2**
+- **Mobile responsiveness**: all tables wrap in scrollable containers instead of breaking layout,
+  stat cards go 2-per-row on phones, the result-entry screen switched from a cramped table to
+  stacked cards that work on small screens, buttons go full-width on mobile.
+- **Tax / GST**: each lab has a default tax rate (Settings → Lab Profile & Billing), editable per
+  order at creation time. Invoices and the invoice PDF now show subtotal → discount → tax → total →
+  paid → balance correctly.
+- **Doctor commissions**: each order referred by a doctor auto-calculates commission (doctor's % ×
+  order subtotal), tracked as pending/paid per order, with a dedicated **Doctor Commissions** report
+  (Settings → Doctor Commissions) grouped by doctor, showing totals owed/paid and a "Mark Paid" action.
+- **Lab Profile settings page** to edit address, phone, email, NABL/GST numbers, and default tax rate
+  — these now flow through to the PDF report/invoice header.
+- New order form shows a **live running total** (subtotal/discount/tax/total) as you check tests.
+
+**Upgrading an existing install:** just replace the code and restart — `src/schema.js` auto-adds the
+new columns (`labs.default_tax_percent`, `orders.tax_percent`, `orders.commission_amount`,
+`orders.commission_status`, `orders.commission_paid_at`) to your existing database on startup. No data
+is lost; existing orders simply show 0 tax/commission since they predate this feature.

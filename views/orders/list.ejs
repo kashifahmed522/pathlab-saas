@@ -6,7 +6,8 @@
 </div>
 
 <div class="card p-3">
-  <table class="table table-sm align-middle">
+  <div class="table-responsive">
+<table class="table table-sm align-middle">
     <thead><tr><th>Order No</th><th>Patient</th><th>Home Collection</th><th>Status</th><th>Created</th><th></th></tr></thead>
     <tbody>
       <% orders.forEach(o => { %>
@@ -22,6 +23,7 @@
       <% if (orders.length === 0) { %><tr><td colspan="6" class="text-muted text-center">No orders yet.</td></tr><% } %>
     </tbody>
   </table>
+</div>
 </div>
 
 <%- include('../partials/footer') %>

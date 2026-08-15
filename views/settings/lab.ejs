@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+
+<h4 class="mb-3">Lab Profile & Billing Settings</h4>
+<% if (saved) { %><div class="alert alert-success py-2">Saved.</div><% } %>
+<% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+
+<div class="card p-4" style="max-width:600px;">
+  <form method="POST" action="/settings/lab">
+    <div class="mb-2">
+      <label class="form-label">Lab Name</label>
+      <input name="name" class="form-control" value="<%= lab.name %>" required>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">Address <small class="text-muted">(shown on reports & invoices)</small></label>
+      <textarea name="address" class="form-control"><%= lab.address || '' %></textarea>
+    </div>
+    <div class="row">
+      <div class="col-6 mb-2"><label class="form-label">Phone</label><input name="phone" class="form-control" value="<%= lab.phone || '' %>"></div>
+      <div class="col-6 mb-2"><label class="form-label">Email</label><input name="email" class="form-control" value="<%= lab.email || '' %>"></div>
+    </div>
+    <div class="row">
+      <div class="col-6 mb-2"><label class="form-label">NABL Accreditation No.</label><input name="nabl_no" class="form-control" value="<%= lab.nabl_no || '' %>"></div>
+      <div class="col-6 mb-2"><label class="form-label">GST No.</label><input name="gst_no" class="form-control" value="<%= lab.gst_no || '' %>"></div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Default Tax / GST Rate (%) <small class="text-muted">applied to new orders, editable per order</small></label>
+      <input type="number" step="0.01" name="default_tax_percent" class="form-control" value="<%= lab.default_tax_percent || 0 %>">
+    </div>
+    <button class="btn btn-primary">Save</button>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

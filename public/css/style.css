@@ -4,3 +4,17 @@ body { background: #f4f6f9; }
 .badge-status { font-size: 0.75rem; }
 table thead { background: #eef1f6; }
 .navbar-brand { letter-spacing: 0.5px; }
+
+/* ---- Mobile responsiveness ---- */
+@media (max-width: 767px) {
+  .container { padding-left: 12px; padding-right: 12px; }
+  .card { padding: 0.9rem !important; }
+  .navbar-brand { font-size: 1rem; }
+  .navbar-brand .fs-6 { display: block; font-size: 0.7rem !important; }
+  h4 { font-size: 1.2rem; }
+  .fs-3 { font-size: 1.4rem !important; }
+  table { font-size: 0.85rem; }
+  .btn { white-space: nowrap; }
+  .stat-card .small { font-size: 0.72rem; }
+  .full-width-mobile { width: 100%; }
+}

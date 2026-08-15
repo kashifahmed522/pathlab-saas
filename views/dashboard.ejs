@@ -2,25 +2,25 @@
 
 <h4 class="mb-3">Dashboard</h4>
 <div class="row g-3 mb-4">
-  <div class="col-md-3">
+  <div class="col-6 col-md-3">
     <div class="card stat-card p-3">
       <div class="text-muted small">Today's Orders</div>
       <div class="fs-3 fw-bold"><%= stats.todaysOrders %></div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-6 col-md-3">
     <div class="card stat-card p-3">
       <div class="text-muted small">Total Patients</div>
       <div class="fs-3 fw-bold"><%= stats.totalPatients %></div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-6 col-md-3">
     <div class="card stat-card p-3">
       <div class="text-muted small">Pending Reports</div>
       <div class="fs-3 fw-bold text-warning"><%= stats.pendingReports %></div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-6 col-md-3">
     <div class="card stat-card p-3">
       <div class="text-muted small">Today's Revenue</div>
       <div class="fs-3 fw-bold text-success">₹<%= Number(stats.todaysRevenue).toFixed(0) %></div>
@@ -30,7 +30,8 @@
 
 <div class="card p-3">
   <h6 class="mb-3">Recent Orders</h6>
-  <table class="table table-sm align-middle">
+  <div class="table-responsive">
+<table class="table table-sm align-middle">
     <thead><tr><th>Order No</th><th>Patient</th><th>Status</th><th>Created</th><th></th></tr></thead>
     <tbody>
       <% recentOrders.forEach(o => { %>
@@ -45,6 +46,7 @@
       <% if (recentOrders.length === 0) { %><tr><td colspan="5" class="text-muted text-center">No orders yet. <a href="/orders/new">Create the first one</a>.</td></tr><% } %>
     </tbody>
   </table>
+</div>
 </div>
 
 <%- include('partials/footer') %>

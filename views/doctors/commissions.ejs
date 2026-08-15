@@ -1,0 +1,46 @@
+<%- include('../partials/header') %>
+
+<h4 class="mb-3">Doctor Commissions</h4>
+<p class="text-muted small">Commission is calculated automatically on each order's subtotal, using the doctor's commission % set in <a href="/settings/doctors">Referring Doctors</a>.</p>
+
+<% const doctorIds = Object.keys(byDoctor); %>
+<% if (doctorIds.length === 0) { %>
+  <div class="card p-4 text-center text-muted">No commission-earning orders yet. Assign a referring doctor with a commission % when creating an order.</div>
+<% } %>
+
+<% doctorIds.forEach(id => { const d = byDoctor[id]; %>
+  <div class="card p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+      <h6 class="mb-0">Dr. <%= d.doctor_name %></h6>
+      <div>
+        <span class="badge bg-warning text-dark">Pending: ₹<%= d.pending.toFixed(2) %></span>
+        <span class="badge bg-success">Paid: ₹<%= d.paid.toFixed(2) %></span>
+      </div>
+    </div>
+    <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Order</th><th>Patient</th><th>Date</th><th>Commission</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% d.orders.forEach(o => { %>
+          <tr>
+            <td><a href="/orders/<%= o.id %>"><%= o.order_no %></a></td>
+            <td><%= o.patient_name %></td>
+            <td><%= new Date(o.created_at).toLocaleDateString() %></td>
+            <td>₹<%= Number(o.commission_amount).toFixed(2) %></td>
+            <td><span class="badge <%= o.commission_status === 'paid' ? 'bg-success' : 'bg-warning text-dark' %>"><%= o.commission_status %></span></td>
+            <td>
+              <% if (o.commission_status !== 'paid') { %>
+              <form method="POST" action="/orders/<%= o.id %>/commission/pay" onsubmit="return confirm('Mark this commission as paid?')">
+                <button class="btn btn-sm btn-outline-success">Mark Paid</button>
+              </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+<% }) %>
+
+<%- include('../partials/footer') %>

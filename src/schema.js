@@ -184,7 +184,23 @@ async function runSchema() {
     t.timestamp('sent_at').defaultTo(knex.fn.now());
   });
 
+  // ---------------- MIGRATIONS FOR EXISTING TABLES ----------------
+  // (safe to run repeatedly - only adds a column if it doesn't already exist)
+  await addColumnIfMissing('labs', 'default_tax_percent', (t) => t.decimal('default_tax_percent', 5, 2).defaultTo(0));
+  await addColumnIfMissing('orders', 'tax_percent', (t) => t.decimal('tax_percent', 5, 2).defaultTo(0));
+  await addColumnIfMissing('orders', 'commission_amount', (t) => t.decimal('commission_amount', 10, 2).defaultTo(0));
+  await addColumnIfMissing('orders', 'commission_status', (t) => t.string('commission_status').defaultTo('pending'));
+  await addColumnIfMissing('orders', 'commission_paid_at', (t) => t.timestamp('commission_paid_at'));
+
   console.log('[schema] ready.');
+}
+
+async function addColumnIfMissing(table, column, builderFn) {
+  const has = await knex.schema.hasColumn(table, column);
+  if (!has) {
+    await knex.schema.alterTable(table, builderFn);
+    console.log(`[schema] added column: ${table}.${column}`);
+  }
 }
 
 module.exports = { runSchema };

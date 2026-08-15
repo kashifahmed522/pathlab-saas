@@ -88,6 +88,51 @@ router.post('/settings/doctors/new', requireLogin, async (req, res) => {
   res.redirect('/settings/doctors');
 });
 
+// ---------------- Doctor Commissions Report ----------------
+router.get('/doctors/commissions', requireLogin, async (req, res) => {
+  const labId = req.session.user.lab_id;
+  const rows = await knex('orders as o')
+    .join('doctors as d', 'd.id', 'o.doctor_id')
+    .join('patients as p', 'p.id', 'o.patient_id')
+    .where('o.lab_id', labId)
+    .whereNotNull('o.doctor_id')
+    .where('o.commission_amount', '>', 0)
+    .select('o.id', 'o.order_no', 'o.created_at', 'o.commission_amount', 'o.commission_status',
+      'd.id as doctor_id', 'd.name as doctor_name', 'p.name as patient_name')
+    .orderBy('o.created_at', 'desc');
+
+  const byDoctor = {};
+  for (const r of rows) {
+    if (!byDoctor[r.doctor_id]) byDoctor[r.doctor_id] = { doctor_name: r.doctor_name, pending: 0, paid: 0, orders: [] };
+    byDoctor[r.doctor_id].orders.push(r);
+    if (r.commission_status === 'paid') byDoctor[r.doctor_id].paid += Number(r.commission_amount);
+    else byDoctor[r.doctor_id].pending += Number(r.commission_amount);
+  }
+
+  res.render('doctors/commissions', { byDoctor });
+});
+
+// ---------------- Lab Profile Settings ----------------
+router.get('/settings/lab', requireLogin, requireRole('lab_admin'), async (req, res) => {
+  const lab = await knex('labs').where({ id: req.session.user.lab_id }).first();
+  res.render('settings/lab', { lab, error: null, saved: false });
+});
+
+router.post('/settings/lab', requireLogin, requireRole('lab_admin'), async (req, res) => {
+  const labId = req.session.user.lab_id;
+  const { name, address, phone, email, nabl_no, gst_no, default_tax_percent } = req.body;
+  try {
+    await knex('labs').where({ id: labId }).update({
+      name, address, phone, email, nabl_no, gst_no, default_tax_percent: default_tax_percent || 0,
+    });
+    const lab = await knex('labs').where({ id: labId }).first();
+    res.render('settings/lab', { lab, error: null, saved: true });
+  } catch (e) {
+    const lab = await knex('labs').where({ id: labId }).first();
+    res.render('settings/lab', { lab, error: e.message, saved: false });
+  }
+});
+
 // ---------------- Users / staff ----------------
 const bcrypt = require('bcryptjs');
 router.get('/settings/users', requireLogin, requireRole('lab_admin'), async (req, res) => {

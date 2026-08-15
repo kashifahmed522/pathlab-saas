@@ -1,6 +1,6 @@
 <%- include('../partials/header') %>
 
-<h4 class="mb-3">Referring Doctors</h4>
+<h4 class="mb-3">Referring Doctors <a href="/doctors/commissions" class="btn btn-sm btn-outline-primary float-end">View Commissions</a></h4>
 
 <div class="row">
   <div class="col-md-5">
@@ -18,7 +18,8 @@
   </div>
   <div class="col-md-7">
     <div class="card p-3">
-      <table class="table table-sm">
+      <div class="table-responsive">
+<table class="table table-sm">
         <thead><tr><th>Name</th><th>Clinic</th><th>Phone</th><th>Commission</th></tr></thead>
         <tbody>
           <% doctors.forEach(d => { %>
@@ -27,6 +28,7 @@
           <% if (doctors.length === 0) { %><tr><td colspan="4" class="text-muted text-center">No doctors added yet.</td></tr><% } %>
         </tbody>
       </table>
+</div>
     </div>
   </div>
 </div>

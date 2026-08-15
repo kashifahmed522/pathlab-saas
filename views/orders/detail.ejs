@@ -1,12 +1,12 @@
 <%- include('../partials/header') %>
 
-<div class="d-flex justify-content-between align-items-start mb-3">
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
   <div>
     <h4 class="mb-0">Order <%= order.order_no %> <span class="badge bg-secondary"><%= order.status %></span></h4>
     <div class="text-muted small"><%= patient.name %> · UHID <%= patient.uhid %> · <%= patient.age || '-' %><%= patient.age_unit ? patient.age_unit[0] : '' %>/<%= patient.gender || '-' %> · <%= patient.phone || '' %></div>
     <div class="text-muted small">Referred by: <%= doctor ? 'Dr. ' + doctor.name : 'Self / Walk-in' %> <%= order.home_collection ? ' · 🏠 Home Collection' : '' %></div>
   </div>
-  <div>
+  <div class="d-flex gap-2">
     <a href="/orders/<%= order.id %>/invoice.pdf" target="_blank" class="btn btn-outline-secondary btn-sm">Invoice PDF</a>
     <a href="/orders/<%= order.id %>/report.pdf" target="_blank" class="btn btn-outline-primary btn-sm">Report PDF</a>
   </div>
@@ -16,69 +16,68 @@
   <div class="col-md-7">
     <div class="card p-3 mb-3">
       <h6>Samples</h6>
-      <table class="table table-sm">
-        <thead><tr><th>Barcode</th><th>Type</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-        <% samples.forEach(s => { %>
-          <tr>
-            <td><code><%= s.barcode %></code></td>
-            <td><%= s.sample_type %></td>
-            <td><span class="badge bg-info text-dark"><%= s.status %></span></td>
-            <td>
-              <% if (s.status === 'pending') { %>
-                <form method="POST" action="/orders/<%= order.id %>/samples/<%= s.id %>/collect" class="d-inline">
-                  <button class="btn btn-sm btn-outline-success">Mark Collected</button>
-                </form>
-              <% } else if (s.status === 'collected') { %>
-                <form method="POST" action="/orders/<%= order.id %>/samples/<%= s.id %>/receive" class="d-inline">
-                  <button class="btn btn-sm btn-outline-primary">Mark Received in Lab</button>
-                </form>
-              <% } %>
-            </td>
-          </tr>
-        <% }) %>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Barcode</th><th>Type</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+          <% samples.forEach(s => { %>
+            <tr>
+              <td><code><%= s.barcode %></code></td>
+              <td><%= s.sample_type %></td>
+              <td><span class="badge bg-info text-dark"><%= s.status %></span></td>
+              <td>
+                <% if (s.status === 'pending') { %>
+                  <form method="POST" action="/orders/<%= order.id %>/samples/<%= s.id %>/collect" class="d-inline">
+                    <button class="btn btn-sm btn-outline-success">Mark Collected</button>
+                  </form>
+                <% } else if (s.status === 'collected') { %>
+                  <form method="POST" action="/orders/<%= order.id %>/samples/<%= s.id %>/receive" class="d-inline">
+                    <button class="btn btn-sm btn-outline-primary">Mark Received in Lab</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card p-3 mb-3">
       <h6>Test Results</h6>
-      <table class="table table-sm align-middle">
-        <thead><tr><th>Test</th><th>Value</th><th>Flag</th><th>Reference Range</th><th></th></tr></thead>
-        <tbody>
-        <% itemsWithResults.forEach(it => { %>
-          <tr>
-            <td><%= it.test_name %> <div class="text-muted small"><%= it.unit || '' %></div></td>
-            <td style="min-width:120px;">
-              <form method="POST" action="/orders/<%= order.id %>/items/<%= it.id %>/result" class="d-flex gap-1">
-                <input type="text" name="value" class="form-control form-control-sm" value="<%= it.result ? it.result.value : '' %>" style="width:90px;">
-                <select name="flag" class="form-select form-select-sm" style="width:100px;">
-                  <% ['normal','high','low','critical'].forEach(f => { %>
-                    <option value="<%= f %>" <%= it.result && it.result.flag===f ? 'selected':'' %>><%= f %></option>
-                  <% }) %>
-                </select>
-                <button class="btn btn-sm btn-outline-secondary">Save</button>
-              </form>
-            </td>
-            <td>
+      <% itemsWithResults.forEach(it => { %>
+        <div class="border rounded p-2 mb-2">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-1">
+            <div>
+              <div class="fw-semibold"><%= it.test_name %></div>
+              <div class="text-muted small"><%= it.unit || '' %> <%= it.reference_range ? '· Ref: ' + it.reference_range : '' %></div>
+            </div>
+            <div class="d-flex gap-1">
+              <span class="badge bg-light text-dark border"><%= it.status %></span>
               <% if (it.result) { %>
                 <span class="badge <%= it.result.flag==='critical' ? 'bg-danger' : (it.result.flag==='high'||it.result.flag==='low') ? 'bg-warning text-dark' : 'bg-success' %>"><%= it.result.flag %></span>
               <% } %>
-            </td>
-            <td class="small text-muted"><%= it.reference_range %></td>
-            <td><span class="badge bg-light text-dark border"><%= it.status %></span></td>
-          </tr>
-        <% }) %>
-        </tbody>
-      </table>
+            </div>
+          </div>
+          <form method="POST" action="/orders/<%= order.id %>/items/<%= it.id %>/result" class="d-flex flex-wrap gap-2 mt-2">
+            <input type="text" name="value" class="form-control form-control-sm flex-grow-1" style="min-width:100px;" placeholder="Result value" value="<%= it.result ? it.result.value : '' %>">
+            <select name="flag" class="form-select form-select-sm" style="width:auto; min-width:110px;">
+              <% ['normal','high','low','critical'].forEach(f => { %>
+                <option value="<%= f %>" <%= it.result && it.result.flag===f ? 'selected':'' %>><%= f %></option>
+              <% }) %>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary">Save</button>
+          </form>
+        </div>
+      <% }) %>
 
       <% if (order.status !== 'completed' && order.status !== 'report_dispatched') { %>
       <form method="POST" action="/orders/<%= order.id %>/verify" onsubmit="return confirm('Verify all results and generate the final report?')">
-        <button class="btn btn-success">Verify Results & Generate Report</button>
+        <button class="btn btn-success full-width-mobile">Verify Results & Generate Report</button>
       </form>
       <% } else if (order.status === 'completed') { %>
       <form method="POST" action="/orders/<%= order.id %>/dispatch">
-        <button class="btn btn-primary">Dispatch Report to Patient (WhatsApp/Email)</button>
+        <button class="btn btn-primary full-width-mobile">Dispatch Report to Patient (WhatsApp/Email)</button>
       </form>
       <% } else { %>
         <span class="text-success">✔ Report dispatched to patient.</span>
@@ -90,19 +89,20 @@
     <div class="card p-3 mb-3">
       <h6>Billing</h6>
       <% if (invoice) { %>
-        <table class="table table-sm">
+        <table class="table table-sm mb-2">
           <tr><td>Subtotal</td><td class="text-end">₹<%= Number(invoice.subtotal).toFixed(2) %></td></tr>
-          <tr><td>Discount</td><td class="text-end">₹<%= Number(invoice.discount).toFixed(2) %></td></tr>
-          <tr><td class="fw-bold">Total</td><td class="text-end fw-bold">₹<%= Number(invoice.total).toFixed(2) %></td></tr>
+          <tr><td>Discount</td><td class="text-end">− ₹<%= Number(invoice.discount).toFixed(2) %></td></tr>
+          <tr><td>Tax<%= order.tax_percent ? ' (' + Number(order.tax_percent).toFixed(1) + '%)' : '' %></td><td class="text-end">+ ₹<%= Number(invoice.tax).toFixed(2) %></td></tr>
+          <tr class="border-top"><td class="fw-bold">Total</td><td class="text-end fw-bold">₹<%= Number(invoice.total).toFixed(2) %></td></tr>
           <tr><td>Paid</td><td class="text-end text-success">₹<%= Number(invoice.paid_amount).toFixed(2) %></td></tr>
           <tr><td class="fw-bold">Balance</td><td class="text-end fw-bold text-danger">₹<%= (Number(invoice.total)-Number(invoice.paid_amount)).toFixed(2) %></td></tr>
         </table>
         <span class="badge <%= invoice.status==='paid' ? 'bg-success' : invoice.status==='partial' ? 'bg-warning text-dark' : 'bg-danger' %> mb-2"><%= invoice.status %></span>
 
         <% if (invoice.status !== 'paid') { %>
-        <form method="POST" action="/orders/<%= order.id %>/payments" class="d-flex gap-1 mt-2">
-          <input type="number" step="0.01" name="amount" class="form-control form-control-sm" placeholder="Amount" required>
-          <select name="mode" class="form-select form-select-sm">
+        <form method="POST" action="/orders/<%= order.id %>/payments" class="d-flex flex-wrap gap-2 mt-2">
+          <input type="number" step="0.01" name="amount" class="form-control form-control-sm flex-grow-1" style="min-width:100px;" placeholder="Amount" required>
+          <select name="mode" class="form-select form-select-sm" style="width:auto;">
             <option value="cash">Cash</option>
             <option value="card">Card</option>
             <option value="upi">UPI</option>
@@ -119,9 +119,32 @@
           <% payments.forEach(p => { %>
             <li class="list-group-item px-0 d-flex justify-content-between"><span><%= p.mode %></span><span>₹<%= Number(p.amount).toFixed(2) %></span></li>
           <% }) %>
+          <% if (payments.length === 0) { %><li class="list-group-item px-0 text-muted small">No payments recorded yet.</li><% } %>
         </ul>
       <% } %>
     </div>
+
+    <% if (doctor && Number(order.commission_amount) > 0) { %>
+    <div class="card p-3 mb-3">
+      <h6>Doctor Commission</h6>
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div>Dr. <%= doctor.name %> (<%= doctor.commission_percent %>%)</div>
+          <div class="fw-bold">₹<%= Number(order.commission_amount).toFixed(2) %></div>
+        </div>
+        <div>
+          <% if (order.commission_status === 'paid') { %>
+            <span class="badge bg-success">Paid</span>
+          <% } else { %>
+            <span class="badge bg-warning text-dark mb-1 d-block">Pending</span>
+            <form method="POST" action="/orders/<%= order.id %>/commission/pay">
+              <button class="btn btn-sm btn-outline-success">Mark Paid</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <% } %>
   </div>
 </div>
 

@@ -22,7 +22,8 @@
 
 <div class="card p-3">
   <% let cat = null; %>
-  <table class="table table-sm align-middle">
+  <div class="table-responsive">
+<table class="table table-sm align-middle">
     <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Sample</th><th>Price (₹)</th><th>TAT (hrs)</th><th>Status</th><th></th></tr></thead>
     <tbody>
       <% const filtered = tests.filter(t => !q || t.name.toLowerCase().includes(q.toLowerCase()) || t.code.toLowerCase().includes(q.toLowerCase())); %>
@@ -55,6 +56,7 @@
       <% if (filtered.length === 0) { %><tr><td colspan="8" class="text-muted text-center py-3">No tests found. Try "Load Standard Catalog" above, or add a custom test.</td></tr><% } %>
     </tbody>
   </table>
+</div>
 </div>
 
 <%- include('../partials/footer') %>

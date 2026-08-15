@@ -1,7 +1,7 @@
 const express = require('express');
 const dayjs = require('dayjs');
 const knex = require('../db');
-const { requireLogin } = require('../middleware/auth');
+const { requireLogin, requireRole } = require('../middleware/auth');
 const { orderNo, barcode, invoiceNo, reportNo } = require('../utils/idgen');
 const { audit, notify } = require('../utils/log');
 const { reportPdf, invoicePdf } = require('../utils/pdf');
@@ -30,12 +30,13 @@ router.get('/orders/new', requireLogin, async (req, res) => {
   const patients = await knex('patients').where({ lab_id: labId }).orderBy('name');
   const doctors = await knex('doctors').where({ lab_id: labId }).orderBy('name');
   const tests = await knex('test_catalog').where({ lab_id: labId, active: true }).orderBy('category');
-  res.render('orders/new', { patients, doctors, tests, selectedPatientId: patientId ? Number(patientId) : null, error: null });
+  const lab = await knex('labs').where({ id: labId }).first();
+  res.render('orders/new', { patients, doctors, tests, lab, selectedPatientId: patientId ? Number(patientId) : null, error: null });
 });
 
 router.post('/orders/new', requireLogin, async (req, res) => {
   const labId = req.session.user.lab_id;
-  const { patient_id, doctor_id, home_collection, collection_address, discount } = req.body;
+  const { patient_id, doctor_id, home_collection, collection_address, discount, tax_percent } = req.body;
   let testIds = req.body.test_ids;
   if (!testIds) testIds = [];
   if (!Array.isArray(testIds)) testIds = [testIds];
@@ -44,11 +45,15 @@ router.post('/orders/new', requireLogin, async (req, res) => {
     const patients = await knex('patients').where({ lab_id: labId }).orderBy('name');
     const doctors = await knex('doctors').where({ lab_id: labId }).orderBy('name');
     const tests = await knex('test_catalog').where({ lab_id: labId, active: true }).orderBy('category');
-    return res.render('orders/new', { patients, doctors, tests, selectedPatientId: Number(patient_id), error: 'Please select at least one test.' });
+    const lab = await knex('labs').where({ id: labId }).first();
+    return res.render('orders/new', { patients, doctors, tests, lab, selectedPatientId: Number(patient_id), error: 'Please select at least one test.' });
   }
 
   const trx = await knex.transaction();
   try {
+    const lab = await trx('labs').where({ id: labId }).first();
+    const doctor = doctor_id ? await trx('doctors').where({ id: doctor_id, lab_id: labId }).first() : null;
+
     const orderIdResult = await trx('orders').insert({
       lab_id: labId,
       patient_id,
@@ -58,6 +63,7 @@ router.post('/orders/new', requireLogin, async (req, res) => {
       home_collection: !!home_collection,
       collection_address: collection_address || null,
       created_by: req.session.user.id,
+      tax_percent: tax_percent !== undefined && tax_percent !== '' ? tax_percent : lab.default_tax_percent,
     }).returning('id');
     const orderId = firstId(orderIdResult);
 
@@ -76,12 +82,22 @@ router.post('/orders/new', requireLogin, async (req, res) => {
     }
 
     const disc = Number(discount || 0);
-    const total = Math.max(subtotal - disc, 0);
+    const taxPct = Number(tax_percent !== undefined && tax_percent !== '' ? tax_percent : lab.default_tax_percent) || 0;
+    const taxable = Math.max(subtotal - disc, 0);
+    const taxAmt = +(taxable * (taxPct / 100)).toFixed(2);
+    const total = +(taxable + taxAmt).toFixed(2);
+
     await trx('invoices').insert({
       order_id: orderId,
       invoice_no: invoiceNo(req.session.user.lab_code),
-      subtotal, discount: disc, tax: 0, total, paid_amount: 0, status: 'unpaid',
+      subtotal, discount: disc, tax: taxAmt, total, paid_amount: 0, status: 'unpaid',
     });
+
+    // Doctor referral commission - calculated on the subtotal (pre-tax) of the order
+    if (doctor) {
+      const commission = +(subtotal * (Number(doctor.commission_percent || 0) / 100)).toFixed(2);
+      await trx('orders').where({ id: orderId }).update({ commission_amount: commission, commission_status: commission > 0 ? 'pending' : 'na' });
+    }
 
     await trx.commit();
     await audit(labId, req.session.user.id, 'create', 'order', orderId);
@@ -92,7 +108,8 @@ router.post('/orders/new', requireLogin, async (req, res) => {
     const patients = await knex('patients').where({ lab_id: labId }).orderBy('name');
     const doctors = await knex('doctors').where({ lab_id: labId }).orderBy('name');
     const tests = await knex('test_catalog').where({ lab_id: labId, active: true }).orderBy('category');
-    res.render('orders/new', { patients, doctors, tests, selectedPatientId: Number(patient_id), error: e.message });
+    const lab = await knex('labs').where({ id: labId }).first();
+    res.render('orders/new', { patients, doctors, tests, lab, selectedPatientId: Number(patient_id), error: e.message });
   }
 });
 
@@ -243,6 +260,13 @@ router.post('/orders/:id/payments', requireLogin, async (req, res) => {
   const status = newPaid >= Number(invoice.total) ? 'paid' : (newPaid > 0 ? 'partial' : 'unpaid');
   await knex('invoices').where({ id: invoice.id }).update({ paid_amount: newPaid, status });
   res.redirect(`/orders/${order.id}`);
+});
+
+// ---------------- Doctor commission payout ----------------
+router.post('/orders/:id/commission/pay', requireLogin, requireRole('lab_admin', 'accountant'), async (req, res) => {
+  const labId = req.session.user.lab_id;
+  await knex('orders').where({ id: req.params.id, lab_id: labId }).update({ commission_status: 'paid', commission_paid_at: new Date() });
+  res.redirect('/doctors/commissions');
 });
 
 module.exports = router;
