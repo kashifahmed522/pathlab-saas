@@ -1,0 +1,60 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h4 class="mb-0">Test Catalog <span class="badge bg-secondary"><%= tests.filter(t => t.active).length %> active</span></h4>
+  <div class="d-flex gap-2">
+    <% if (currentUser && currentUser.role === 'lab_admin') { %>
+    <form method="POST" action="/settings/tests/load-standard" onsubmit="return confirm('This will add any missing tests from the standard catalog (~130 tests across all departments). Existing tests and your custom prices are never overwritten. Continue?')">
+      <button class="btn btn-success btn-sm">⬇ Load Standard Catalog</button>
+    </form>
+    <% } %>
+    <a href="/settings/tests/new" class="btn btn-primary btn-sm">+ Add Custom Test</a>
+  </div>
+</div>
+
+<form class="mb-3" method="GET">
+  <div class="row g-2">
+    <div class="col-md-6">
+      <input type="text" name="q" value="<%= q %>" class="form-control" placeholder="Search by test name or code...">
+    </div>
+  </div>
+</form>
+
+<div class="card p-3">
+  <% let cat = null; %>
+  <table class="table table-sm align-middle">
+    <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Sample</th><th>Price (₹)</th><th>TAT (hrs)</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <% const filtered = tests.filter(t => !q || t.name.toLowerCase().includes(q.toLowerCase()) || t.code.toLowerCase().includes(q.toLowerCase())); %>
+      <% filtered.forEach(t => { %>
+        <% if (t.category !== cat) { cat = t.category; %>
+          <tr class="table-light"><td colspan="8" class="fw-bold small text-muted"><%= cat || 'General' %></td></tr>
+        <% } %>
+        <tr class="<%= t.active ? '' : 'text-muted' %>">
+          <td><%= t.code %></td>
+          <td class="<%= t.active ? '' : 'text-decoration-line-through' %>"><%= t.name %></td>
+          <td><%= t.category %></td>
+          <td><%= t.sample_type %></td>
+          <td><%= Number(t.price).toFixed(2) %></td>
+          <td><%= t.tat_hours %></td>
+          <td><span class="badge <%= t.active ? 'bg-success' : 'bg-secondary' %>"><%= t.active ? 'Active' : 'Inactive' %></span></td>
+          <td class="d-flex gap-1">
+            <a href="/settings/tests/<%= t.id %>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+            <% if (t.active) { %>
+            <form method="POST" action="/settings/tests/<%= t.id %>/delete" onsubmit="return confirm('Deactivate this test?')">
+              <button class="btn btn-sm btn-outline-danger">Deactivate</button>
+            </form>
+            <% } else { %>
+            <form method="POST" action="/settings/tests/<%= t.id %>/reactivate">
+              <button class="btn btn-sm btn-outline-success">Reactivate</button>
+            </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (filtered.length === 0) { %><tr><td colspan="8" class="text-muted text-center py-3">No tests found. Try "Load Standard Catalog" above, or add a custom test.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

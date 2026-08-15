@@ -1,0 +1,30 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Patients</h4>
+  <a href="/patients/new" class="btn btn-primary btn-sm">+ New Patient</a>
+</div>
+
+<form class="mb-3" method="GET">
+  <input type="text" name="q" value="<%= q %>" class="form-control" placeholder="Search by name, phone or UHID...">
+</form>
+
+<div class="card p-3">
+  <table class="table table-sm align-middle">
+    <thead><tr><th>UHID</th><th>Name</th><th>Age/Gender</th><th>Phone</th><th></th></tr></thead>
+    <tbody>
+      <% patients.forEach(p => { %>
+        <tr>
+          <td><%= p.uhid %></td>
+          <td><%= p.name %></td>
+          <td><%= p.age || '-' %> <%= p.age_unit || '' %> / <%= p.gender || '-' %></td>
+          <td><%= p.phone || '-' %></td>
+          <td><a href="/orders/new?patient_id=<%= p.id %>" class="btn btn-sm btn-outline-primary">New Order</a></td>
+        </tr>
+      <% }) %>
+      <% if (patients.length === 0) { %><tr><td colspan="5" class="text-muted text-center">No patients found.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

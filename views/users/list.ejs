@@ -1,0 +1,43 @@
+<%- include('../partials/header') %>
+
+<h4 class="mb-3">Staff / Users</h4>
+<% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+
+<div class="row">
+  <div class="col-md-5">
+    <div class="card p-3 mb-3">
+      <h6>Add Staff Member</h6>
+      <form method="POST" action="/settings/users/new">
+        <div class="mb-2"><input name="name" class="form-control" placeholder="Full Name" required></div>
+        <div class="mb-2"><input type="email" name="email" class="form-control" placeholder="Email" required></div>
+        <div class="mb-2"><input type="password" name="password" class="form-control" placeholder="Password" required minlength="6"></div>
+        <div class="mb-2"><input name="phone" class="form-control" placeholder="Phone"></div>
+        <div class="mb-2">
+          <select name="role" class="form-select" required>
+            <option value="receptionist">Receptionist</option>
+            <option value="phlebotomist">Phlebotomist (Sample Collection)</option>
+            <option value="technician">Lab Technician</option>
+            <option value="pathologist">Pathologist</option>
+            <option value="accountant">Accountant</option>
+            <option value="lab_admin">Lab Admin</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm">Add User</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card p-3">
+      <table class="table table-sm">
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+        <tbody>
+          <% users.forEach(u => { %>
+            <tr><td><%= u.name %></td><td><%= u.email %></td><td><span class="badge bg-secondary"><%= u.role %></span></td><td><%= u.active ? 'Active' : 'Inactive' %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

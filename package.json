@@ -1,0 +1,26 @@
+{
+  "name": "pathlab-saas",
+  "version": "1.0.0",
+  "description": "Multi-tenant Pathology Lab Management System (LIS/LIMS) - inspired by industry leaders like CrelioHealth, Dr Lal PathLabs, MedPlus",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "migrate": "node src/migrate.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dayjs": "^1.11.10",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "knex": "^3.1.0",
+    "pdfkit": "^0.15.0",
+    "sqlite3": "^5.1.7",
+    "uuid": "^9.0.1"
+  }
+}

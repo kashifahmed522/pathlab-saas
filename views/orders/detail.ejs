@@ -1,0 +1,128 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h4 class="mb-0">Order <%= order.order_no %> <span class="badge bg-secondary"><%= order.status %></span></h4>
+    <div class="text-muted small"><%= patient.name %> · UHID <%= patient.uhid %> · <%= patient.age || '-' %><%= patient.age_unit ? patient.age_unit[0] : '' %>/<%= patient.gender || '-' %> · <%= patient.phone || '' %></div>
+    <div class="text-muted small">Referred by: <%= doctor ? 'Dr. ' + doctor.name : 'Self / Walk-in' %> <%= order.home_collection ? ' · 🏠 Home Collection' : '' %></div>
+  </div>
+  <div>
+    <a href="/orders/<%= order.id %>/invoice.pdf" target="_blank" class="btn btn-outline-secondary btn-sm">Invoice PDF</a>
+    <a href="/orders/<%= order.id %>/report.pdf" target="_blank" class="btn btn-outline-primary btn-sm">Report PDF</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-7">
+    <div class="card p-3 mb-3">
+      <h6>Samples</h6>
+      <table class="table table-sm">
+        <thead><tr><th>Barcode</th><th>Type</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        <% samples.forEach(s => { %>
+          <tr>
+            <td><code><%= s.barcode %></code></td>
+            <td><%= s.sample_type %></td>
+            <td><span class="badge bg-info text-dark"><%= s.status %></span></td>
+            <td>
+              <% if (s.status === 'pending') { %>
+                <form method="POST" action="/orders/<%= order.id %>/samples/<%= s.id %>/collect" class="d-inline">
+                  <button class="btn btn-sm btn-outline-success">Mark Collected</button>
+                </form>
+              <% } else if (s.status === 'collected') { %>
+                <form method="POST" action="/orders/<%= order.id %>/samples/<%= s.id %>/receive" class="d-inline">
+                  <button class="btn btn-sm btn-outline-primary">Mark Received in Lab</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <h6>Test Results</h6>
+      <table class="table table-sm align-middle">
+        <thead><tr><th>Test</th><th>Value</th><th>Flag</th><th>Reference Range</th><th></th></tr></thead>
+        <tbody>
+        <% itemsWithResults.forEach(it => { %>
+          <tr>
+            <td><%= it.test_name %> <div class="text-muted small"><%= it.unit || '' %></div></td>
+            <td style="min-width:120px;">
+              <form method="POST" action="/orders/<%= order.id %>/items/<%= it.id %>/result" class="d-flex gap-1">
+                <input type="text" name="value" class="form-control form-control-sm" value="<%= it.result ? it.result.value : '' %>" style="width:90px;">
+                <select name="flag" class="form-select form-select-sm" style="width:100px;">
+                  <% ['normal','high','low','critical'].forEach(f => { %>
+                    <option value="<%= f %>" <%= it.result && it.result.flag===f ? 'selected':'' %>><%= f %></option>
+                  <% }) %>
+                </select>
+                <button class="btn btn-sm btn-outline-secondary">Save</button>
+              </form>
+            </td>
+            <td>
+              <% if (it.result) { %>
+                <span class="badge <%= it.result.flag==='critical' ? 'bg-danger' : (it.result.flag==='high'||it.result.flag==='low') ? 'bg-warning text-dark' : 'bg-success' %>"><%= it.result.flag %></span>
+              <% } %>
+            </td>
+            <td class="small text-muted"><%= it.reference_range %></td>
+            <td><span class="badge bg-light text-dark border"><%= it.status %></span></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+
+      <% if (order.status !== 'completed' && order.status !== 'report_dispatched') { %>
+      <form method="POST" action="/orders/<%= order.id %>/verify" onsubmit="return confirm('Verify all results and generate the final report?')">
+        <button class="btn btn-success">Verify Results & Generate Report</button>
+      </form>
+      <% } else if (order.status === 'completed') { %>
+      <form method="POST" action="/orders/<%= order.id %>/dispatch">
+        <button class="btn btn-primary">Dispatch Report to Patient (WhatsApp/Email)</button>
+      </form>
+      <% } else { %>
+        <span class="text-success">✔ Report dispatched to patient.</span>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card p-3 mb-3">
+      <h6>Billing</h6>
+      <% if (invoice) { %>
+        <table class="table table-sm">
+          <tr><td>Subtotal</td><td class="text-end">₹<%= Number(invoice.subtotal).toFixed(2) %></td></tr>
+          <tr><td>Discount</td><td class="text-end">₹<%= Number(invoice.discount).toFixed(2) %></td></tr>
+          <tr><td class="fw-bold">Total</td><td class="text-end fw-bold">₹<%= Number(invoice.total).toFixed(2) %></td></tr>
+          <tr><td>Paid</td><td class="text-end text-success">₹<%= Number(invoice.paid_amount).toFixed(2) %></td></tr>
+          <tr><td class="fw-bold">Balance</td><td class="text-end fw-bold text-danger">₹<%= (Number(invoice.total)-Number(invoice.paid_amount)).toFixed(2) %></td></tr>
+        </table>
+        <span class="badge <%= invoice.status==='paid' ? 'bg-success' : invoice.status==='partial' ? 'bg-warning text-dark' : 'bg-danger' %> mb-2"><%= invoice.status %></span>
+
+        <% if (invoice.status !== 'paid') { %>
+        <form method="POST" action="/orders/<%= order.id %>/payments" class="d-flex gap-1 mt-2">
+          <input type="number" step="0.01" name="amount" class="form-control form-control-sm" placeholder="Amount" required>
+          <select name="mode" class="form-select form-select-sm">
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="upi">UPI</option>
+            <option value="netbanking">Net Banking</option>
+            <option value="insurance">Insurance</option>
+          </select>
+          <button class="btn btn-sm btn-primary">Record Payment</button>
+        </form>
+        <% } %>
+
+        <hr>
+        <div class="small text-muted">Payment History</div>
+        <ul class="list-group list-group-flush">
+          <% payments.forEach(p => { %>
+            <li class="list-group-item px-0 d-flex justify-content-between"><span><%= p.mode %></span><span>₹<%= Number(p.amount).toFixed(2) %></span></li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

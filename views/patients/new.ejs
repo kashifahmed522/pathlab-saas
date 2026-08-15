@@ -1,0 +1,49 @@
+<%- include('../partials/header') %>
+
+<h4 class="mb-3">Register New Patient</h4>
+<% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+<div class="card p-4" style="max-width:600px;">
+  <form method="POST" action="/patients/new">
+    <div class="mb-2">
+      <label class="form-label">Full Name</label>
+      <input type="text" name="name" class="form-control" required>
+    </div>
+    <div class="row">
+      <div class="col-4 mb-2">
+        <label class="form-label">Age</label>
+        <input type="number" name="age" class="form-control">
+      </div>
+      <div class="col-4 mb-2">
+        <label class="form-label">Unit</label>
+        <select name="age_unit" class="form-select">
+          <option value="years">Years</option>
+          <option value="months">Months</option>
+          <option value="days">Days</option>
+        </select>
+      </div>
+      <div class="col-4 mb-2">
+        <label class="form-label">Gender</label>
+        <select name="gender" class="form-select">
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">Phone</label>
+      <input type="text" name="phone" class="form-control">
+    </div>
+    <div class="mb-2">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" class="form-control">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Address <small class="text-muted">(for home collection)</small></label>
+      <textarea name="address" class="form-control"></textarea>
+    </div>
+    <button class="btn btn-primary">Save & Create Order</button>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>
